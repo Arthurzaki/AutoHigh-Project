@@ -1,0 +1,8 @@
+import Icon from './Icon.jsx';
+const PILL={Baru:'pill-amber',Terkonfirmasi:'pill-blue',Dikerjakan:'pill-violet',Selesai:'pill-green',Lunas:'pill-green',DP:'pill-amber','Belum bayar':'pill-red',Dibatalkan:'pill-red',Hadir:'pill-green',Izin:'pill-amber',Sakit:'pill-blue',Alpha:'pill-red'};
+export const Card=({title,children,className='',aside})=><section className={`content-card ${className}`}>{title&&<div className="card-heading"><h2>{title}</h2>{aside}</div>}{children}</section>;
+export const StatCard=({label,value,hint,icon='grid',accent='gold',trend})=><div className={`stat-card stat-${accent}`}><div className="stat-top"><span>{label}</span><span className="stat-icon"><Icon name={icon} size={21}/></span></div><div className="stat-number">{value}</div><div className="stat-bottom">{trend&&<span className="stat-trend">{trend}</span>}<span>{hint}</span></div></div>;
+export const Pill=({children})=><span className={`status-pill ${PILL[children]||'pill-neutral'}`}><span className="pill-dot"/>{children}</span>;
+export const Field=({label,children})=><div className="field"><label>{label}</label>{children}</div>;
+export const PageHeader=({title,sub,action,eyebrow})=><div className="page-header"><div><div className="eyebrow"><span className="eyebrow-line"/>{eyebrow||'AUTOHIGH MANAGEMENT'}</div><h1>{title}</h1><p>{sub}</p></div>{action&&<div className="page-actions">{action}</div>}</div>;
+export const EmptyState=({title='Belum ada data',description='Data akan muncul setelah ditambahkan.'})=><div className="empty-state"><div className="empty-icon"><Icon name="car" size={25}/></div><strong>{title}</strong><p>{description}</p></div>;

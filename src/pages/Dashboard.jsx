@@ -1,0 +1,29 @@
+import { Link } from 'react-router-dom';
+import useCollection from '../hooks/useCollection.js';
+import { Card, StatCard, Pill, PageHeader, EmptyState } from '../components/UI.jsx';
+import Icon from '../components/Icon.jsx';
+import { rupiah, today, monthKey, tgl } from '../lib/format.js';
+const STAGES=['Baru','Terkonfirmasi','Dikerjakan','Selesai'];
+const WEEK=['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+export default function Dashboard(){
+ const {items:bookings}=useCollection('bookings');
+ const {items:trx}=useCollection('transactions');
+ const {items:employees}=useCollection('employees');
+ const {items:att}=useCollection('attendance');
+ const {items:exp}=useCollection('expenses');
+ const todays=bookings.filter(b=>b.date===today()).sort((a,b)=>a.time.localeCompare(b.time));
+ const income=trx.filter(t=>t.date?.startsWith(monthKey())).reduce((s,t)=>s+Number(t.paid||0),0);
+ const expense=exp.filter(t=>t.date?.startsWith(monthKey())).reduce((s,t)=>s+Number(t.amount||0),0);
+ const present=att.filter(a=>a.date===today()&&a.status==='Hadir').length;
+ const maxStage=Math.max(...STAGES.map(x=>bookings.filter(b=>b.status===x).length),1);
+ const sevenDays=Array.from({length:7},(_,i)=>{let d=new Date();d.setDate(d.getDate()-6+i);let key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;return {key,day:WEEK[d.getDay()],value:trx.filter(t=>t.date===key).reduce((s,t)=>s+Number(t.paid||0),0)}});
+ const maxDay=Math.max(...sevenDays.map(x=>x.value),1);
+ return <>
+  <div className="dashboard-hero"><div className="hero-text"><div className="hero-kicker"><Icon name="spark" size={14}/> AUTOHIGH BUSINESS OVERVIEW</div><h1>Selamat datang di <em>AutoHigh.</em></h1><p>Pantau booking, pengerjaan kendaraan, dan performa bisnis workshop Anda dalam satu tempat.</p><div className="hero-actions"><Link to="/booking" className="btn-gold hero-cta"><Icon name="plus" size={17}/> Booking Baru</Link><Link to="/pembukuan" className="hero-secondary">Lihat laporan <Icon name="arrow" size={17}/></Link></div></div><div className="hero-art"><div className="art-halo"/><img src="/autohigh-logo.png" alt="Logo AutoHigh"/><span className="hero-art-caption">PREMIUM AUTOMOTIVE CARE</span></div></div>
+  <div className="section-label"><div><span className="section-rule"/> RINGKASAN OPERASIONAL</div><span>Update data workshop secara langsung</span></div>
+  <div className="stats-grid"><StatCard label="Booking Hari Ini" value={String(todays.length).padStart(2,'0')} hint={`${todays.filter(x=>x.status==='Baru').length} menunggu konfirmasi`} icon="calendar"/><StatCard label="Dalam Pengerjaan" value={String(bookings.filter(b=>b.status==='Dikerjakan').length).padStart(2,'0')} hint="Kendaraan di workshop" icon="car" accent="blue"/><StatCard label="Pemasukan Bulan Ini" value={rupiah(income)} hint="Total pembayaran masuk" icon="wallet" accent="green"/><StatCard label="Karyawan Hadir" value={`${present}/${employees.length}`} hint="Presensi hari ini" icon="users" accent="violet"/></div>
+  <div className="dashboard-grid"><Card title="Jadwal Booking Hari Ini" className="dashboard-schedule" aside={<Link className="text-link" to="/booking">Lihat semua <Icon name="arrow" size={15}/></Link>}><div className="table-scroll"><table className="w-full"><thead><tr><th>JAM</th><th>PELANGGAN / KENDARAAN</th><th>LAYANAN</th><th>STATUS</th></tr></thead><tbody>{todays.slice(0,6).map(b=><tr key={b.id}><td><span className="time-chip"><Icon name="clock" size={13}/>{b.time}</span></td><td><strong className="cell-primary">{b.name}</strong><div className="cell-secondary">{b.vehicle} · {b.plate}</div></td><td>{b.service}</td><td><Pill>{b.status}</Pill></td></tr>)}</tbody></table>{!todays.length&&<EmptyState title="Belum ada booking hari ini" description="Booking kendaraan baru akan ditampilkan pada jadwal ini."/>}</div></Card>
+  <Card title="Status Pengerjaan" className="status-card" aside={<span className="card-tag">Semua booking</span>}><p className="small-description">Distribusi tahapan layanan kendaraan</p><div className="stage-list">{STAGES.map((s,i)=>{let count=bookings.filter(b=>b.status===s).length;return <div key={s} className="stage-row"><div className="stage-row-title"><span><i className={`stage-dot stage-${i}`}/>{s}</span><b>{count}</b></div><div className="stage-track"><div className={`stage-bar stage-${i}`} style={{width:`${count/maxStage*100}%`}}/></div></div>})}</div><Link to="/booking" className="stage-footer">Kelola seluruh booking <Icon name="arrow" size={16}/></Link></Card></div>
+  <div className="dashboard-grid bottom-grid"><Card title="Aktivitas Pembayaran (7 Hari)" className="chart-card" aside={<Link to="/transaksi" className="text-link">Detail transaksi <Icon name="arrow" size={15}/></Link>}><div className="chart-total"><span>Total 7 hari terakhir</span><strong>{rupiah(sevenDays.reduce((s,d)=>s+d.value,0))}</strong></div><div className="bar-chart">{sevenDays.map((d,i)=><div className="bar-group" key={d.key}><span className="bar-value">{d.value?`${Math.round(d.value/1000)}k`:''}</span><div className={`bar-column ${i===6?'current-bar':''}`} style={{height:`${Math.max(d.value/maxDay*100,3)}%`}} title={`${tgl(d.key)}: ${rupiah(d.value)}`}/><span>{d.day}</span></div>)}</div></Card><Card title="Ringkasan Keuangan" className="finance-card" aside={<span className="card-tag">Bulan berjalan</span>}><div className="finance-line"><span><i className="fin-dot income"/>Pemasukan</span><strong>{rupiah(income)}</strong></div><div className="finance-line"><span><i className="fin-dot outcome"/>Pengeluaran</span><strong>{rupiah(expense)}</strong></div><div className="finance-summary"><span>Selisih Pemasukan & Pengeluaran</span><strong>{rupiah(income-expense)}</strong><small>Ringkasan kas tercatat, bukan laba akuntansi final.</small></div><Link to="/pembukuan" className="stage-footer">Buka laporan keuangan <Icon name="arrow" size={16}/></Link></Card></div>
+ </>
+}
